@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,8 +25,11 @@ import uni.smartcampus.util.Unit;
  *
  * Usage:
  *   MockDataSeeder seeder = new MockDataSeeder("data/logs.csv", "data/alerts.csv");
- *   seeder.seed(Map.of(building1, BuildingProfile.office("B1"),
- *                      building2, BuildingProfile.lab("B2")));
+ *   seeder.seed(Map.of(
+ *     building1, Map.of(sensor1, RoomProfile.generalOffice("Floor 1"),
+ *                       sensor2, RoomProfile.serverRoom("Server Room")),
+ *     building2, Map.of(sensor3, RoomProfile.researchLab("Lab A"))
+ *   ));
  */
 public class MockDataSeeder {
 
@@ -46,11 +50,12 @@ public class MockDataSeeder {
   /**
    * Generates and writes all historical data.
    *
-   * @param buildings map of Building → BuildingProfile used to drive DataGenerator
+   * @param buildings map of Building → (Sensor → RoomProfile).
+   * Each sensor is driven by its own DataGenerator so that
+   * rooms with different purposes produce distinct readings.
    */
-  public void seed(Map<Building, DataGenerator.BuildingProfile> buildings) throws IOException {
-    // Ensure parent directory exists, then overwrite any existing files
-    if (logsPath.getParent() != null)   Files.createDirectories(logsPath.getParent());
+  public void seed(Map<Building, Map<Sensor, RoomProfile>> buildings) throws IOException {
+    if (logsPath.getParent()   != null) Files.createDirectories(logsPath.getParent());
     if (alertsPath.getParent() != null) Files.createDirectories(alertsPath.getParent());
     Files.deleteIfExists(logsPath);
     Files.deleteIfExists(alertsPath);
@@ -63,39 +68,41 @@ public class MockDataSeeder {
     LocalDateTime end   = LocalDateTime.now();
 
     int measurementCount = 0;
-    int alertCount;
 
-    for (Map.Entry<Building, DataGenerator.BuildingProfile> entry : buildings.entrySet()) {
-      Building      building  = entry.getKey();
-      DataGenerator generator = new DataGenerator(entry.getValue());
+    for (Map.Entry<Building, Map<Sensor, RoomProfile>> entry : buildings.entrySet()) {
+      Building building = entry.getKey();
+      Map<Sensor, DataGenerator> generators = buildGenerators(entry.getValue());
 
       LocalDateTime tick = start;
       while (!tick.isAfter(end)) {
 
-        // Temperature is shared across sensors in this tick (used by energy model too)
-        double currentTemp = generator.generateTemperature(tick);
+        for (Map.Entry<Sensor, DataGenerator> sg : generators.entrySet()) {
+          Sensor s        = sg.getKey();
+          DataGenerator gen = sg.getValue();
 
-        for (Sensor s : building.getSensors()) {
           switch (s.getType()) {
 
             case TEMPERATURE -> {
-              Measurement m = new Measurement(tick, currentTemp, Unit.C);
+              Measurement m = new Measurement(tick, gen.generateTemperature(tick), Unit.C);
               measurementCount += write(m, s.getId(), building.getId(),
-                  measurementRepo, alertRepo, alertManager);
+                measurementRepo, alertRepo, alertManager
+              );
             }
 
             case ENERGY -> {
-              double energyKwh = generator.generateEnergy(tick, currentTemp);
-              // Derive average power over the tick interval: P(kW) = E(kWh) / t(h)
-              double powerKw   = energyKwh / (TICK_MINUTES / 60.0);
+              // Each energy sensor models its own room — no shared temperature needed
+              double energyKwh = gen.generateEnergy(tick);
+              double powerKw = energyKwh / (TICK_MINUTES / 60.0);
 
               Measurement mEnergy = new Measurement(tick, energyKwh, Unit.KWH);
-              Measurement mPower  = new Measurement(tick, powerKw,   Unit.KW);
+              Measurement mPower = new Measurement(tick, powerKw,   Unit.KW);
 
               measurementCount += write(mEnergy, s.getId(), building.getId(),
-                  measurementRepo, alertRepo, alertManager);
+                measurementRepo, alertRepo, alertManager
+              );
               measurementCount += write(mPower,  s.getId(), building.getId(),
-                  measurementRepo, alertRepo, alertManager);
+                measurementRepo, alertRepo, alertManager
+              );
             }
 
             default -> { /* HUMIDITY and future types not yet modelled */ }
@@ -106,9 +113,19 @@ public class MockDataSeeder {
       }
     }
 
-    alertCount = alertManager.getAllAlerts().size();
+    int alertCount = alertManager.getAllAlerts().size();
     System.out.printf("Seeding complete: %,d measurements and %,d alerts written.%n",
-        measurementCount, alertCount);
+      measurementCount, alertCount
+    );
+  }
+
+  /** Builds one DataGenerator per sensor from the given profile map. */
+  private Map<Sensor, DataGenerator> buildGenerators(Map<Sensor, RoomProfile> profiles) {
+    Map<Sensor, DataGenerator> generators = new LinkedHashMap<>();
+    for (Map.Entry<Sensor, RoomProfile> sp : profiles.entrySet()) {
+      generators.put(sp.getKey(), new DataGenerator(sp.getValue()));
+    }
+    return generators;
   }
 
   /**
@@ -116,9 +133,10 @@ public class MockDataSeeder {
    * its alert to alerts.csv. Returns 1 to allow simple counting at the call site.
    */
   private int write(Measurement m, String sensorId, String buildingId,
-      MeasurementRepository measurementRepo,
-      AlertRepository alertRepo,
-      AlertManager alertManager) throws IOException {
+    MeasurementRepository measurementRepo,
+    AlertRepository alertRepo,
+    AlertManager alertManager
+  ) throws IOException {
 
     measurementRepo.append(m, sensorId, buildingId);
 

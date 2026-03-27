@@ -54,7 +54,7 @@ public class SimulatorConstants {
   public static final double UNOCCUPANCY_COOLING_EFFECT = -0.5;
 
   // ============ SEASONAL CONSTANTS ============
-  // Winter: Target - 5°C | Spring: Target - 1°C | Summer: Target + 4°C | Fall: Target
+  // Winter: Target - 5°C | Spring: Target | Summer: Target + 10°C | Fall: Target - 2°C
 
   public static final double SEASONAL_WINTER_OFFSET = -5.0;
   public static final double SEASONAL_SPRING_OFFSET = 0.0;
@@ -64,37 +64,46 @@ public class SimulatorConstants {
   // ============ ENERGY CONSTANTS ============
 
   /**
-   * Base load for each building type (kWh).
+   * Base load for each room type (kWh).
    * Always-on equipment: lighting, standby systems.
    */
   public static final class BaseLoad {
-    public static final double OFFICE = 2.5;
-    public static final double LAB = 4.0;
-    public static final double RESIDENTIAL = 1.0;
-    public static final double STORAGE = 0.5;
+    // private constructor to hide the implicit public one
+    private BaseLoad(){}
+
+    public static final double GENERAL_OFFICE = 2.5;
+    public static final double RESEARCH_LAB   = 4.0;
+    public static final double SERVER_ROOM    = 8.0;  // Servers run 24/7
+    public static final double STORAGE        = 0.5;
   }
 
   /**
-   * Occupancy load for each building type (kWh).
+   * Occupancy load for each room type (kWh).
    * Additional consumption during occupied hours.
    */
   public static final class OccupancyLoad {
-    public static final double OFFICE = 3.0;
-    public static final double LAB = 5.0;
-    public static final double RESIDENTIAL = 1.5;
-    public static final double STORAGE = 0.0;
+    // private constructor to hide the implicit public one
+    private OccupancyLoad(){}
+
+    public static final double GENERAL_OFFICE = 3.0;
+    public static final double RESEARCH_LAB   = 5.0;
+    public static final double SERVER_ROOM    = 0.0;  // No human occupancy load
+    public static final double STORAGE        = 0.0;
   }
 
   /**
-   * HVAC efficiency factor for each building type.
+   * HVAC efficiency factor for each room type.
    * Multiplier for temperature deviation to get cooling/heating load.
    * Higher values = more cooling/heating needed per degree of deviation.
    */
   public static final class HvacFactor {
-    public static final double OFFICE = 0.8;
-    public static final double LAB = 1.2;
-    public static final double RESIDENTIAL = 0.6;
-    public static final double STORAGE = 0.5;
+    // private constructor to hide the implicit public one
+    private HvacFactor(){}
+
+    public static final double GENERAL_OFFICE = 0.8;
+    public static final double RESEARCH_LAB   = 1.2;
+    public static final double SERVER_ROOM    = 2.0;  // Aggressive cooling required
+    public static final double STORAGE        = 0.5;
   }
 
   // ============ NOISE/VARIANCE CONSTANTS ============
@@ -104,59 +113,64 @@ public class SimulatorConstants {
    * Temperature noise (standard deviation in °C).
    */
   public static final class TemperatureNoise {
-    public static final double OFFICE = 0.5;
-    public static final double LAB = 0.3;
-    public static final double RESIDENTIAL = 0.8;
-    public static final double STORAGE = 1.0;
+    // private constructor to hide the implicit public one
+    private TemperatureNoise(){}
+
+    public static final double GENERAL_OFFICE = 0.5;
+    public static final double RESEARCH_LAB   = 0.3;
+    public static final double SERVER_ROOM    = 0.2;  // Tight climate control
+    public static final double STORAGE        = 1.0;
   }
 
   /**
    * Energy noise (standard deviation in kWh).
    */
   public static final class EnergyNoise {
-    public static final double OFFICE = 0.1;
-    public static final double LAB = 0.2;
-    public static final double RESIDENTIAL = 0.15;
-    public static final double STORAGE = 0.05;
+    // private constructor to hide the implicit public one
+    private EnergyNoise(){}
+
+    public static final double GENERAL_OFFICE = 0.1;
+    public static final double RESEARCH_LAB   = 0.2;
+    public static final double SERVER_ROOM    = 0.3;
+    public static final double STORAGE        = 0.05;
   }
 
   // ============ TARGET TEMPERATURES ============
-  // Comfortable setpoint temperature for each building type (°C).
+  // Comfortable setpoint temperature for each room type (°C).
 
   /**
    * Target temperature that HVAC tries to maintain.
    */
   public static final class TargetTemperature {
-    public static final double OFFICE = 21.0;
-    public static final double LAB = 20.0;
-    public static final double RESIDENTIAL = 22.0;
-    public static final double STORAGE = 15.0;
+    // private constructor to hide the implicit public one
+    private TargetTemperature(){}
+
+    public static final double GENERAL_OFFICE = 21.0;
+    public static final double RESEARCH_LAB   = 20.0;
+    public static final double SERVER_ROOM    = 18.0;  // Cool for equipment longevity
+    public static final double STORAGE        = 15.0;
   }
 
   // ============ OCCUPANCY PATTERNS ============
-  // Business hours for each building type (hour of day, 0-23)
+  // Business hours for each room type (hour of day, 0-23)
 
   /**
    * Start and end hours for occupancy patterns.
    */
   public static final class OccupancyHours {
-    // OFFICE: Monday-Friday 6 AM - 10 PM
+    // private constructor to hide the implicit public one
+    private OccupancyHours(){}
+
+    // General office: Monday-Friday 6 AM - 10 PM
     public static final int OFFICE_START_WEEKDAY = 6;
-    public static final int OFFICE_END_WEEKDAY = 22;
-    
-    // LAB: Monday-Friday 7 AM - 7 PM
+    public static final int OFFICE_END_WEEKDAY   = 22;
+
+    // Research lab: Monday-Friday 7 AM - 7 PM
     public static final int LAB_START_WEEKDAY = 7;
-    public static final int LAB_END_WEEKDAY = 19;
-    
-    // RESIDENTIAL: Morning 12 AM-7 AM, Evening 6 PM-12 AM
-    public static final int RESIDENTIAL_MORNING_START = 0;
-    public static final int RESIDENTIAL_MORNING_END = 7;
-    public static final int RESIDENTIAL_EVENING_START = 18;
-    
-    // STORAGE: No regular occupancy
-    
-    // Weekend patterns (if applicable)
+    public static final int LAB_END_WEEKDAY   = 19;
+
+    // Weekend patterns
     public static final int OFFICE_SATURDAY_START = 8;
-    public static final int OFFICE_SATURDAY_END = 18;
+    public static final int OFFICE_SATURDAY_END   = 18;
   }
 }
