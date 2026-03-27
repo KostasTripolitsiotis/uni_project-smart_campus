@@ -27,7 +27,7 @@ public class Main {
     lab.addSensor(new EnergySensor    ("POW-04", "Cooling System"));
 
     // ── Seed historical data ──────────────────────────────────────────────────
-    MockDataSeeder seeder = new MockDataSeeder("data/logs.csv", "data/alerts.csv");
+    MockDataSeeder seeder = new MockDataSeeder("generated-data/logs.csv", "generated-data/alerts.csv");
     seeder.seed(Map.of(
       office, BuildingProfile.office(office.getName()),
       lab,    BuildingProfile.lab(lab.getName())
