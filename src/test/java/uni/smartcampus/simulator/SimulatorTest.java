@@ -16,7 +16,6 @@ import uni.smartcampus.model.sensor.EnergySensor;
 import uni.smartcampus.model.sensor.Sensor;
 import uni.smartcampus.model.sensor.TemperatureSensor;
 import uni.smartcampus.service.MetricService;
-import uni.smartcampus.simulator.DataGenerator.BuildingProfile;
 import uni.smartcampus.util.Unit;
 
 public class SimulatorTest {
@@ -53,8 +52,8 @@ public class SimulatorTest {
   @Test
   void sampleMockValues() {
     assertDoesNotThrow(() -> {
-      DataGenerator gen1 = new DataGenerator(BuildingProfile.office(b1.getName()));
-      DataGenerator gen2 = new DataGenerator(BuildingProfile.lab(b2.getName()));
+      DataGenerator gen1 = new DataGenerator(RoomProfile.generalOffice(b1.getName()));
+      DataGenerator gen2 = new DataGenerator(RoomProfile.researchLab(b2.getName()));
 
       EnergySensor es21 = new EnergySensor("POW-21", "Lab-Floor1");
       EnergySensor es22 = new EnergySensor("POW-22", "HVAC");

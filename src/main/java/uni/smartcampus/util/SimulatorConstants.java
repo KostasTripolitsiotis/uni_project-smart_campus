@@ -54,12 +54,13 @@ public class SimulatorConstants {
   public static final double UNOCCUPANCY_COOLING_EFFECT = -0.5;
 
   // ============ SEASONAL CONSTANTS ============
-  // Winter: Target - 5°C | Spring: Target | Summer: Target + 10°C | Fall: Target - 2°C
+  // Residual indoor drift after HVAC regulation — much smaller than outdoor swings.
+  // Winter: Target - 2°C | Spring: Target | Summer: Target + 3°C | Fall: Target - 1°C
 
-  public static final double SEASONAL_WINTER_OFFSET = -5.0;
-  public static final double SEASONAL_SPRING_OFFSET = 0.0;
-  public static final double SEASONAL_SUMMER_OFFSET = 10.0;
-  public static final double SEASONAL_FALL_OFFSET = -2.0;
+  public static final double SEASONAL_WINTER_OFFSET = -2.0;
+  public static final double SEASONAL_SPRING_OFFSET =  0.0;
+  public static final double SEASONAL_SUMMER_OFFSET =  3.0;
+  public static final double SEASONAL_FALL_OFFSET   = -1.0;
 
   // ============ ENERGY CONSTANTS ============
 
@@ -71,39 +72,39 @@ public class SimulatorConstants {
     // private constructor to hide the implicit public one
     private BaseLoad(){}
 
-    public static final double GENERAL_OFFICE = 2.5;
-    public static final double RESEARCH_LAB   = 4.0;
-    public static final double SERVER_ROOM    = 8.0;  // Servers run 24/7
-    public static final double STORAGE        = 0.5;
+    // kWh consumed per 5-minute tick (always-on: lighting, standby equipment)
+    public static final double GENERAL_OFFICE = 0.5;
+    public static final double RESEARCH_LAB   = 1.2;
+    public static final double SERVER_ROOM    = 1.5;  // Servers run 24/7
+    public static final double STORAGE        = 0.1;
   }
 
   /**
-   * Occupancy load for each room type (kWh).
+   * Occupancy load for each room type (kWh per 5-minute tick).
    * Additional consumption during occupied hours.
    */
   public static final class OccupancyLoad {
     // private constructor to hide the implicit public one
     private OccupancyLoad(){}
 
-    public static final double GENERAL_OFFICE = 3.0;
-    public static final double RESEARCH_LAB   = 5.0;
+    public static final double GENERAL_OFFICE = 0.8;
+    public static final double RESEARCH_LAB   = 1.5;
     public static final double SERVER_ROOM    = 0.0;  // No human occupancy load
     public static final double STORAGE        = 0.0;
   }
 
   /**
-   * HVAC efficiency factor for each room type.
-   * Multiplier for temperature deviation to get cooling/heating load.
-   * Higher values = more cooling/heating needed per degree of deviation.
+   * HVAC efficiency factor for each room type (kWh per °C of deviation per tick).
+   * Scaled for room-level sensors; server room highest due to tight temperature control.
    */
   public static final class HvacFactor {
     // private constructor to hide the implicit public one
     private HvacFactor(){}
 
-    public static final double GENERAL_OFFICE = 0.8;
-    public static final double RESEARCH_LAB   = 1.2;
-    public static final double SERVER_ROOM    = 2.0;  // Aggressive cooling required
-    public static final double STORAGE        = 0.5;
+    public static final double GENERAL_OFFICE = 0.05;
+    public static final double RESEARCH_LAB   = 0.08;
+    public static final double SERVER_ROOM    = 0.15;  // Aggressive cooling required
+    public static final double STORAGE        = 0.02;
   }
 
   // ============ NOISE/VARIANCE CONSTANTS ============
