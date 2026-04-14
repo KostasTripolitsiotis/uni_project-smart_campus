@@ -4,6 +4,7 @@ import java.awt.*;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.*;
 import javax.swing.border.*;
 
@@ -17,16 +18,26 @@ import uni.smartcampus.model.sensor.Sensor;
 /**
  * Panel representing one building: its name, a row of metric cards,
  * and a compact sensor list below.
+ *
+ * Metrics listed in {@code simulatedTypes} are rendered with a purple "SIM"
+ * badge to indicate they were injected via the Simulate Metric dialog.
  */
 public class BuildingPanel extends JPanel {
 
+  private static final String FONT      = "SansSerif";
   private static final Color BG_PANEL   = Color.WHITE;
   private static final Color BG_HEADER  = new Color(44, 62, 80);
   private static final Color BG_SENSOR  = new Color(248, 249, 252);
   private static final Color FG_SENSOR  = new Color(70, 85, 105);
   private static final Color DIVIDER    = new Color(220, 224, 230);
 
-  public BuildingPanel(Building building, List<Metric> metrics, List<Alert> alerts) {
+  public BuildingPanel(
+    Building building,
+    List<Metric> metrics,
+    List<Alert> alerts,
+    Set<MetricType> simulatedTypes,
+    Set<String> simulatedSensorIds
+  ) {
     setLayout(new BorderLayout(0, 0));
     setBackground(BG_PANEL);
     setBorder(BorderFactory.createCompoundBorder(
@@ -34,12 +45,11 @@ public class BuildingPanel extends JPanel {
       new EmptyBorder(0, 0, 0, 0)
     ));
 
-    // Build a quick lookup: metricType -> highest alert severity
     Map<MetricType, AlertSeverity> alertMap = buildAlertMap(alerts, building.getId());
 
-    add(buildHeader(building),               BorderLayout.NORTH);
-    add(buildMetricsRow(metrics, alertMap),  BorderLayout.CENTER);
-    add(buildSensorList(building.getSensors()), BorderLayout.SOUTH);
+    add(buildHeader(building),                                        BorderLayout.NORTH);
+    add(buildMetricsRow(metrics, alertMap, simulatedTypes),           BorderLayout.CENTER);
+    add(buildSensorList(building.getSensors(), simulatedSensorIds),   BorderLayout.SOUTH);
   }
 
   private JPanel buildHeader(Building building) {
@@ -47,13 +57,13 @@ public class BuildingPanel extends JPanel {
     header.setBackground(BG_HEADER);
 
     JLabel idBadge = new JLabel(" #" + building.getId() + " ");
-    idBadge.setFont(new Font("SansSerif", Font.BOLD, 10));
+    idBadge.setFont(new Font(FONT, Font.BOLD, 10));
     idBadge.setForeground(new Color(180, 200, 220));
     idBadge.setBackground(new Color(30, 45, 60));
     idBadge.setOpaque(true);
 
     JLabel nameLabel = new JLabel(building.getName());
-    nameLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
+    nameLabel.setFont(new Font(FONT, Font.BOLD, 14));
     nameLabel.setForeground(Color.WHITE);
 
     header.add(idBadge);
@@ -61,32 +71,39 @@ public class BuildingPanel extends JPanel {
     return header;
   }
 
-  private JPanel buildMetricsRow(List<Metric> metrics, Map<MetricType, AlertSeverity> alertMap) {
+  private JPanel buildMetricsRow(
+    List<Metric> metrics,
+    Map<MetricType, AlertSeverity> alertMap,
+    Set<MetricType> simulatedTypes
+  ) {
     JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
     row.setBackground(BG_PANEL);
 
     if (metrics.isEmpty()) {
       JLabel empty = new JLabel("No metric data available");
-      empty.setFont(new Font("SansSerif", Font.ITALIC, 12));
+      empty.setFont(new Font(FONT, Font.ITALIC, 12));
       empty.setForeground(new Color(150, 160, 175));
       row.add(empty);
     } else {
       for (Metric m : metrics) {
-        AlertSeverity severity = alertMap.get(m.getType());
-        row.add(new MetricCard(m, severity));
+        AlertSeverity severity  = alertMap.get(m.getType());
+        boolean       simulated = simulatedTypes.contains(m.getType());
+        row.add(new MetricCard(m, severity, simulated));
       }
     }
     return row;
   }
 
-  private JPanel buildSensorList(List<Sensor> sensors) {
+  private static final Color SIM_COLOR = new Color(142, 68, 173); // purple
+
+  private JPanel buildSensorList(List<Sensor> sensors, Set<String> simulatedSensorIds) {
     JPanel panel = new JPanel();
     panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
     panel.setBackground(BG_SENSOR);
     panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, DIVIDER));
 
     JLabel sectionLabel = new JLabel("  Sensors");
-    sectionLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
+    sectionLabel.setFont(new Font(FONT, Font.BOLD, 10));
     sectionLabel.setForeground(new Color(120, 130, 145));
     sectionLabel.setBorder(new EmptyBorder(6, 8, 4, 0));
     panel.add(sectionLabel);
@@ -96,11 +113,12 @@ public class BuildingPanel extends JPanel {
     grid.setBorder(new EmptyBorder(0, 8, 8, 8));
 
     for (Sensor s : sensors) {
-      JLabel row = new JLabel(
-        "\u25CF  " + s.getId() + "  —  " + s.getLocation()
-      );
-      row.setFont(new Font("SansSerif", Font.PLAIN, 11));
-      row.setForeground(FG_SENSOR);
+      boolean sim = simulatedSensorIds.contains(s.getId());
+      String text = "\u25CF  " + s.getId() + "  \u2014  " + s.getLocation()
+                    + (sim ? "  [SIM]" : "");
+      JLabel row = new JLabel(text);
+      row.setFont(new Font(FONT, Font.PLAIN, 11));
+      row.setForeground(sim ? SIM_COLOR : FG_SENSOR);
       row.setBorder(new EmptyBorder(1, 2, 1, 2));
       grid.add(row);
     }
@@ -108,7 +126,6 @@ public class BuildingPanel extends JPanel {
     return panel;
   }
 
-  /** Returns the worst alert severity for each metric type in this building. */
   private Map<MetricType, AlertSeverity> buildAlertMap(List<Alert> alerts, String buildingId) {
     Map<MetricType, AlertSeverity> map = new EnumMap<>(MetricType.class);
     for (Alert a : alerts) {

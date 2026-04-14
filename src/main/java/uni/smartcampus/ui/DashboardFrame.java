@@ -1,15 +1,32 @@
 package uni.smartcampus.ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Dimension;
+import java.awt.Font;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import javax.swing.*;
-import javax.swing.border.*;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.SwingWorker;
+import javax.swing.border.EmptyBorder;
 
 import uni.smartcampus.model.Building;
 import uni.smartcampus.model.Measurement;
@@ -31,16 +48,16 @@ import uni.smartcampus.service.MockDataService;
 /**
  * Main application window.
  *
- * Layout:
- *   JMenuBar — Settings (Regenerate Data) | Time Period (HOURLY / DAILY / LAST_1000)
- *   NORTH    — title bar with last-updated timestamp
- *   CENTER   — scrollable column of {@link BuildingPanel}s
- *   EAST     — {@link AlertPanel} with all active alerts
+ * Sections (separate classes):
+ *   {@link NavBar}                      — Settings / Time Period / Simulate
+ *   {@link BuildingPanel}               — per-building metrics + sensor list
+ *   {@link AlertPanel}                  — right-side alert feed
+ *   {@link SimulateMetricDialog}        — inject a building-level metric value
+ *   {@link SimulateMeasurementDialog}   — inject a sensor-level measurement
  *
- * The frame owns its data pipeline: it builds buildings from the campus layout,
- * reads measurements from CSV, computes metrics, and evaluates alerts.
- * Calling {@code renderCurrentData()} recomputes everything with the selected
- * period; calling {@code regenerateAsync()} re-seeds the CSV first.
+ * Simulated data is stored in two maps and cleared together by "Clear Simulations":
+ *   {@code simulatedMetrics}      — overrides computed metrics; keyed by "buildingId:MetricType"
+ *   {@code simulatedMeasurements} — evaluated via evaluateMeasurement(); keyed by sensorId
  */
 public class DashboardFrame extends JFrame {
 
@@ -50,25 +67,39 @@ public class DashboardFrame extends JFrame {
   private static final DateTimeFormatter FMT =
     DateTimeFormatter.ofPattern("yyyy-MM-dd  HH:mm:ss");
 
-  // ── Dependencies ──────────────────────────────────────────────────────────
+  // Dependencies
 
-  private final CampusLayout         layout;
+  private final CampusLayout          layout;
   private final MeasurementRepository measurementRepo;
-  private final MockDataService       mockDataService;
+  private final MockDataService        mockDataService;
 
-  // ── Mutable state ─────────────────────────────────────────────────────────
+  // Mutable state
 
-  /** Cached buildings with measurements loaded — null forces a CSV reload. */
+  /** Null forces a full CSV reload on the next {@link #loadAndRender()} call. */
   private List<Building> loadedBuildings = null;
-  private MetricPeriod   currentPeriod   = MetricPeriod.LAST_1000;
+  private MetricPeriod   currentPeriod   = MetricPeriod.DAILY;
 
-  // ── Live UI references replaced on each render ───────────────────────────
+  /**
+   * Manually injected metrics keyed by {@code "buildingId:MetricType"}.
+   * Takes precedence over computed values; cleared by "Clear Simulations".
+   */
+  private final Map<String, Metric> simulatedMetrics = new LinkedHashMap<>();
 
-  private JLabel      timestampLabel;
+  /**
+   * Manually injected measurements keyed by sensor ID.
+   * Evaluated via {@code AlertManager.evaluateMeasurement()} during render;
+   * cleared by "Clear Simulations".
+   */
+  private record SimMeasurement(String buildingId, Measurement measurement) {}
+  private final Map<String, SimMeasurement> simulatedMeasurements = new LinkedHashMap<>();
+
+  // Live UI references replaced on each render
+
+  private JLabel timestampLabel;
   private JScrollPane buildingsScroll;
-  private AlertPanel  alertPanel;
+  private AlertPanel alertPanel;
 
-  // ── Constructor ───────────────────────────────────────────────────────────
+  // Constructor
 
   public DashboardFrame(
     CampusLayout layout,
@@ -82,15 +113,22 @@ public class DashboardFrame extends JFrame {
 
     setDefaultCloseOperation(EXIT_ON_CLOSE);
     setSize(1100, 700);
-    setMinimumSize(new Dimension(800, 500));
+    setMinimumSize(new Dimension(1000, 500));
     setLocationRelativeTo(null);
     getContentPane().setBackground(BG_APP);
     setLayout(new BorderLayout());
 
-    setJMenuBar(buildMenuBar());
+    setJMenuBar(new NavBar(
+      this::regenerateAsync,
+      period -> { currentPeriod = period; renderCurrentData(); },
+      currentPeriod,
+      this::openSimulateMetricDialog,
+      this::openSimulateMeasurementDialog,
+      this::clearSimulations
+    ));
+
     add(buildHeader(), BorderLayout.NORTH);
 
-    // Placeholder panels — replaced immediately by loadAndRender()
     buildingsScroll = new JScrollPane();
     alertPanel      = new AlertPanel(List.of());
     add(buildingsScroll, BorderLayout.CENTER);
@@ -99,52 +137,7 @@ public class DashboardFrame extends JFrame {
     loadAndRender();
   }
 
-  // ── Menu bar ──────────────────────────────────────────────────────────────
-
-  private JMenuBar buildMenuBar() {
-    JMenuBar bar = new JMenuBar();
-    bar.add(buildSettingsMenu());
-    bar.add(buildPeriodMenu());
-    return bar;
-  }
-
-  private JMenu buildSettingsMenu() {
-    JMenu menu = new JMenu("Settings");
-
-    JMenuItem regenerate = new JMenuItem("Regenerate Data");
-    regenerate.setToolTipText("Re-seed 30 days of mock data and refresh the dashboard");
-    regenerate.addActionListener(e -> regenerateAsync());
-    menu.add(regenerate);
-
-    return menu;
-  }
-
-  private JMenu buildPeriodMenu() {
-    JMenu menu = new JMenu("Time Period");
-    ButtonGroup group = new ButtonGroup();
-
-    for (MetricPeriod period : MetricPeriod.values()) {
-      JRadioButtonMenuItem item = new JRadioButtonMenuItem(periodLabel(period));
-      item.setSelected(period == currentPeriod);
-      item.addActionListener(e -> {
-        currentPeriod = period;
-        renderCurrentData();
-      });
-      group.add(item);
-      menu.add(item);
-    }
-    return menu;
-  }
-
-  private String periodLabel(MetricPeriod period) {
-    return switch (period) {
-      case HOURLY    -> "Hourly";
-      case DAILY     -> "Daily";
-      case LAST_1000 -> "Last 1,000 Measurements";
-    };
-  }
-
-  // ── Header ────────────────────────────────────────────────────────────────
+  // Header
 
   private JPanel buildHeader() {
     JPanel header = new JPanel(new BorderLayout());
@@ -155,7 +148,7 @@ public class DashboardFrame extends JFrame {
     title.setFont(new Font("SansSerif", Font.BOLD, 18));
     title.setForeground(Color.WHITE);
 
-    timestampLabel = new JLabel("—");
+    timestampLabel = new JLabel("\u2014");
     timestampLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
     timestampLabel.setForeground(new Color(160, 180, 200));
 
@@ -164,12 +157,8 @@ public class DashboardFrame extends JFrame {
     return header;
   }
 
-  // ── Data pipeline ─────────────────────────────────────────────────────────
+  // Data pipeline
 
-  /**
-   * Loads (or reuses cached) buildings with measurements, then renders.
-   * Safe to call on the EDT — CSV reading is fast relative to seeding.
-   */
   private void loadAndRender() {
     if (loadedBuildings == null) {
       loadedBuildings = buildBuildingsFromLayout();
@@ -190,44 +179,78 @@ public class DashboardFrame extends JFrame {
   }
 
   /**
-   * Recomputes metrics + alerts from cached buildings using {@code currentPeriod}
-   * and refreshes the CENTER and EAST panels.
+   * Recomputes metrics for every building using {@code currentPeriod}.
+   * Collects which types / sensors are simulated per building for badge rendering.
    */
   private void renderCurrentData() {
     if (loadedBuildings == null) return;
 
     MetricService metricService = new MetricService();
     AlertManager  alertManager  = new AlertManager();
-    Map<String, List<Metric>> metricsByBuilding = new LinkedHashMap<>();
+
+    Map<String, List<Metric>>    metricsByBuilding       = new LinkedHashMap<>();
+    Map<String, Set<MetricType>> simulatedByBuilding     = new LinkedHashMap<>();
+    Map<String, Set<String>>     simSensorsByBuilding    = new LinkedHashMap<>();
 
     for (Building b : loadedBuildings) {
-      List<Metric> bMetrics = new ArrayList<>();
+      List<Metric>    bMetrics  = new ArrayList<>();
+      Set<MetricType> simulated = new LinkedHashSet<>();
+
       for (MetricType type : MetricType.values()) {
-        try {
-          Metric metric = metricService.generateMetric(b, type, currentPeriod);
-          bMetrics.add(metric);
-          alertManager.evaluateMetric(metric);
-        } catch (IllegalArgumentException ignored) {
-          // No data for this metric type in this building — card omitted
+        String key = b.getId() + ":" + type.name();
+
+        Metric metric;
+        if (simulatedMetrics.containsKey(key)) {
+          metric = simulatedMetrics.get(key);
+          simulated.add(type);
+        } else {
+          try {
+            metric = metricService.generateMetric(b, type, currentPeriod);
+          } catch (IllegalArgumentException ignored) {
+            continue; // no data for this type — card omitted
+          }
         }
+
+        bMetrics.add(metric);
+        alertManager.evaluateMetric(metric);
       }
+
       metricsByBuilding.put(b.getId(), bMetrics);
+      simulatedByBuilding.put(b.getId(), simulated);
     }
 
-    render(loadedBuildings, metricsByBuilding, alertManager.getAllAlerts());
+    // Evaluate simulated measurements and collect which sensors are marked SIM
+    for (Map.Entry<String, SimMeasurement> entry : simulatedMeasurements.entrySet()) {
+      String         sensorId = entry.getKey();
+      SimMeasurement sim      = entry.getValue();
+      alertManager.evaluateMeasurement(sim.measurement(), sim.buildingId());
+      simSensorsByBuilding
+        .computeIfAbsent(sim.buildingId(), k -> new LinkedHashSet<>())
+        .add(sensorId);
+    }
+
+    render(loadedBuildings, metricsByBuilding, simulatedByBuilding,
+           simSensorsByBuilding, alertManager.getAllAlerts());
   }
 
-  /** Swaps out the CENTER scroll pane and EAST alert panel with fresh content. */
   private void render(
     List<Building> buildings,
-    Map<String, List<Metric>> metricsByBuilding,
+    Map<String, List<Metric>>    metricsByBuilding,
+    Map<String, Set<MetricType>> simulatedByBuilding,
+    Map<String, Set<String>>     simSensorsByBuilding,
     List<Alert> alerts
   ) {
-    timestampLabel.setText("Last updated: " + LocalDateTime.now().format(FMT)
-      + "  ·  " + periodLabel(currentPeriod));
+    boolean anySim = !simulatedMetrics.isEmpty() || !simulatedMeasurements.isEmpty();
+    String simNote = anySim ? "  \u00b7  SIM active" : "";
+    timestampLabel.setText(
+      "Last updated: " + LocalDateTime.now().format(FMT)
+      + "  \u00b7  " + NavBar.periodLabel(currentPeriod)
+      + simNote
+    );
 
     remove(buildingsScroll);
-    buildingsScroll = buildBuildingsScroll(buildings, metricsByBuilding, alerts);
+    buildingsScroll = buildBuildingsScroll(
+      buildings, metricsByBuilding, simulatedByBuilding, simSensorsByBuilding, alerts);
     add(buildingsScroll, BorderLayout.CENTER);
 
     remove(alertPanel);
@@ -238,7 +261,31 @@ public class DashboardFrame extends JFrame {
     repaint();
   }
 
-  // ── Regenerate ────────────────────────────────────────────────────────────
+  // Simulate
+
+  private void openSimulateMetricDialog() {
+    if (loadedBuildings == null || loadedBuildings.isEmpty()) return;
+    new SimulateMetricDialog(this, loadedBuildings, metric -> {
+      simulatedMetrics.put(metric.getBuildingId() + ":" + metric.getType().name(), metric);
+      renderCurrentData();
+    }).setVisible(true);
+  }
+
+  private void openSimulateMeasurementDialog() {
+    if (loadedBuildings == null || loadedBuildings.isEmpty()) return;
+    new SimulateMeasurementDialog(this, loadedBuildings, (buildingId, sensor, measurement) -> {
+      simulatedMeasurements.put(sensor.getId(), new SimMeasurement(buildingId, measurement));
+      renderCurrentData();
+    }).setVisible(true);
+  }
+
+  private void clearSimulations() {
+    simulatedMetrics.clear();
+    simulatedMeasurements.clear();
+    renderCurrentData();
+  }
+
+  // Regenerate
 
   private void regenerateAsync() {
     JDialog progress = buildProgressDialog();
@@ -255,14 +302,17 @@ public class DashboardFrame extends JFrame {
       protected void done() {
         progress.dispose();
         try {
-          get(); // surface any exception from doInBackground
-          loadedBuildings = null; // discard stale cache — force CSV reload
+          get();
+          loadedBuildings = null;
+          simulatedMetrics.clear();
+          simulatedMeasurements.clear();
           loadAndRender();
-        } catch (Exception ex) {
-          Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
+        } catch (InterruptedException | ExecutionException ex) {
+          if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
+          Throwable cause = (ex instanceof ExecutionException ee) ? ee.getCause() : ex;
+          String msg = cause != null ? cause.getMessage() : ex.getMessage();
           JOptionPane.showMessageDialog(DashboardFrame.this,
-            "Regeneration failed:\n" + cause.getMessage(),
-            "Error", JOptionPane.ERROR_MESSAGE);
+            "Regeneration failed:\n" + msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
       }
     }.execute();
@@ -272,7 +322,7 @@ public class DashboardFrame extends JFrame {
     JDialog d = new JDialog(this, "Regenerating Data", false);
     JPanel panel = new JPanel(new BorderLayout(10, 12));
     panel.setBorder(new EmptyBorder(20, 28, 20, 28));
-    panel.add(new JLabel("Re-seeding 30 days of mock data, please wait…"), BorderLayout.CENTER);
+    panel.add(new JLabel("Re-seeding 30 days of mock data, please wait\u2026"), BorderLayout.CENTER);
     JProgressBar bar = new JProgressBar();
     bar.setIndeterminate(true);
     panel.add(bar, BorderLayout.SOUTH);
@@ -282,11 +332,13 @@ public class DashboardFrame extends JFrame {
     return d;
   }
 
-  // ── Layout helpers ────────────────────────────────────────────────────────
+  // Layout helpers
 
   private JScrollPane buildBuildingsScroll(
     List<Building> buildings,
-    Map<String, List<Metric>> metricsByBuilding,
+    Map<String, List<Metric>>    metricsByBuilding,
+    Map<String, Set<MetricType>> simulatedByBuilding,
+    Map<String, Set<String>>     simSensorsByBuilding,
     List<Alert> alerts
   ) {
     JPanel column = new JPanel();
@@ -295,8 +347,10 @@ public class DashboardFrame extends JFrame {
     column.setBorder(new EmptyBorder(16, 16, 16, 16));
 
     for (Building b : buildings) {
-      List<Metric> metrics = metricsByBuilding.getOrDefault(b.getId(), List.of());
-      BuildingPanel bp = new BuildingPanel(b, metrics, alerts);
+      List<Metric>    metrics    = metricsByBuilding.getOrDefault(b.getId(), List.of());
+      Set<MetricType> simMetrics = simulatedByBuilding.getOrDefault(b.getId(), Set.of());
+      Set<String>     simSensors = simSensorsByBuilding.getOrDefault(b.getId(), Set.of());
+      BuildingPanel bp = new BuildingPanel(b, metrics, alerts, simMetrics, simSensors);
       bp.setAlignmentX(Component.LEFT_ALIGNMENT);
       bp.setMaximumSize(new Dimension(Integer.MAX_VALUE, bp.getPreferredSize().height));
       column.add(bp);
