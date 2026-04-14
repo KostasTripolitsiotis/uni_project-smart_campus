@@ -243,7 +243,6 @@ public class SimulateMetricDialog extends JDialog {
   static ThresholdConfig thresholdFor(MetricType type) {
     return switch (type) {
       case AVERAGE_TEMPERATURE      -> ThresholdConfig.TEMPERATURE;
-      case TOTAL_ENERGY_CONSUMPTION -> ThresholdConfig.ENERGY;
       case PEAK_POWER               -> ThresholdConfig.POWER;
       default                       -> null; // CURRENT_* not checked by evaluateMetric
     };

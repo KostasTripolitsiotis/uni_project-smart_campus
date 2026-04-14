@@ -46,7 +46,6 @@ public class AlertManager {
   private AlertSeverity determineAlertSeverity(MetricType type, double value) {
     return switch (type) {
       case AVERAGE_TEMPERATURE -> checkTemperature(value);
-      case TOTAL_ENERGY_CONSUMPTION -> checkEnergy(value);
       case PEAK_POWER -> checkPower(value);
       default -> null;
     };
@@ -58,16 +57,6 @@ public class AlertManager {
       }
       if (temp >= ThresholdConfig.TEMPERATURE.getWarning()) {
          return AlertSeverity.WARNING;
-      }
-      return null;
-    }
-    
-    private AlertSeverity checkEnergy(double energy) {
-      if (energy >= ThresholdConfig.ENERGY.getCritical()) {
-        return AlertSeverity.CRITICAL;
-      }
-      if (energy >= ThresholdConfig.ENERGY.getWarning()) {
-        return AlertSeverity.WARNING;
       }
       return null;
     }
@@ -96,11 +85,9 @@ public class AlertManager {
     
   private String generateAlertMessage(MetricType type, double value, AlertSeverity severity) {
     return switch (type) {
-      case AVERAGE_TEMPERATURE -> 
+      case AVERAGE_TEMPERATURE ->
         String.format("Temperature at %,.1f°C - %s", value, severity);
-      case TOTAL_ENERGY_CONSUMPTION -> 
-        String.format("Energy consumption at %,.0f kWh - %s", value, severity);
-      case PEAK_POWER -> 
+      case PEAK_POWER ->
         String.format("Peak power at %,.1f kW - %s", value, severity);
       default -> "Unknown metric alert";
     };
