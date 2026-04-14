@@ -11,6 +11,7 @@ import uni.smartcampus.model.campus.SensorConfig;
 import uni.smartcampus.model.sensor.EnergySensor;
 import uni.smartcampus.model.sensor.Sensor;
 import uni.smartcampus.model.sensor.TemperatureSensor;
+import uni.smartcampus.simulator.DataGenerator;
 import uni.smartcampus.simulator.MockDataSeeder;
 import uni.smartcampus.simulator.RoomProfile;
 
@@ -49,6 +50,20 @@ public class MockDataService {
   }
 
   // -------------------------------------------------------------------------
+
+  /**
+   * Returns a {@link DataGenerator} for every sensor in the layout, keyed by sensor ID.
+   * Used by {@link LiveMeasurementService} to produce realistic live readings.
+   */
+  public Map<String, DataGenerator> buildGeneratorsBySensorId(CampusLayout layout) {
+    Map<String, DataGenerator> result = new LinkedHashMap<>();
+    for (BuildingConfig bc : layout.getBuildings()) {
+      for (SensorConfig sc : bc.getSensors()) {
+        result.put(sc.getId(), new DataGenerator(createProfile(sc)));
+      }
+    }
+    return result;
+  }
 
   private Map<Building, Map<Sensor, RoomProfile>> buildSeedMap(CampusLayout layout) {
     Map<Building, Map<Sensor, RoomProfile>> result = new LinkedHashMap<>();

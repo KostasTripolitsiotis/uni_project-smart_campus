@@ -42,6 +42,7 @@ import uni.smartcampus.model.sensor.Sensor;
 import uni.smartcampus.model.sensor.TemperatureSensor;
 import uni.smartcampus.repo.MeasurementRepository;
 import uni.smartcampus.service.AlertManager;
+import uni.smartcampus.service.LiveMeasurementService;
 import uni.smartcampus.service.MetricService;
 import uni.smartcampus.service.MockDataService;
 
@@ -93,6 +94,8 @@ public class DashboardFrame extends JFrame {
   private record SimMeasurement(String buildingId, Measurement measurement) {}
   private final Map<String, SimMeasurement> simulatedMeasurements = new LinkedHashMap<>();
 
+  private final LiveMeasurementService liveMeasurementService;
+
   // Live UI references replaced on each render
 
   private JLabel timestampLabel;
@@ -111,9 +114,16 @@ public class DashboardFrame extends JFrame {
     this.measurementRepo = measurementRepo;
     this.mockDataService = mockDataService;
 
+    this.liveMeasurementService = new LiveMeasurementService(
+      () -> loadedBuildings,
+      mockDataService.buildGeneratorsBySensorId(layout),
+      measurementRepo,
+      this::renderCurrentData
+    );
+
     setDefaultCloseOperation(EXIT_ON_CLOSE);
-    setSize(1100, 700);
-    setMinimumSize(new Dimension(1000, 500));
+    setSize(1220, 700);
+    setMinimumSize(new Dimension(800, 500));
     setLocationRelativeTo(null);
     getContentPane().setBackground(BG_APP);
     setLayout(new BorderLayout());
@@ -133,6 +143,15 @@ public class DashboardFrame extends JFrame {
     alertPanel      = new AlertPanel(List.of());
     add(buildingsScroll, BorderLayout.CENTER);
     add(alertPanel,      BorderLayout.EAST);
+
+    addWindowListener(new java.awt.event.WindowAdapter() {
+      @Override public void windowOpened(java.awt.event.WindowEvent e) {
+        liveMeasurementService.start();
+      }
+      @Override public void windowClosing(java.awt.event.WindowEvent e) {
+        liveMeasurementService.stop();
+      }
+    });
 
     loadAndRender();
   }
