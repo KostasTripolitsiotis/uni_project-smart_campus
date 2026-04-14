@@ -38,8 +38,8 @@ import uni.smartcampus.service.MetricService;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class HistoricalDataTest {
 
-  private static final String LOGS_PATH   = "data/logs.csv";
-  private static final String ALERTS_PATH = "data/alerts.csv";
+  private static final String LOGS_PATH   = "generated-data/logs.csv";
+  private static final String ALERTS_PATH = "generated-data/alerts.csv";
 
   // Campus layout — must mirror Main.java exactly so sensor IDs match the CSV
   private static Building office;
@@ -99,12 +99,12 @@ class HistoricalDataTest {
     MetricService svc = new MetricService();
     MetricType[] types = MetricType.values();
 
-    System.out.println("\n=== Generated Metrics (LAST_1000) ===");
+    System.out.println("\n=== Generated Metrics (DAILY) ===");
     for (Building b : List.of(office, lab)) {
       System.out.println("\n" + b.getName());
       for (MetricType type : types) {
         try {
-          Metric m = svc.generateMetric(b, type, MetricPeriod.LAST_1000);
+          Metric m = svc.generateMetric(b, type, MetricPeriod.DAILY);
           System.out.printf("  %-30s  %.2f %s%n",
               type, m.getValue(), m.getUnit().getSymbol());
           assertTrue(Double.isFinite(m.getValue()),
@@ -136,7 +136,6 @@ class HistoricalDataTest {
     List<Alert> criticals = alertManager.getAlertsBySeverity(uni.smartcampus.model.alert.AlertSeverity.CRITICAL);
     List<Alert> warnings  = alertManager.getAlertsBySeverity(uni.smartcampus.model.alert.AlertSeverity.WARNING);
 
-    // TODO remove sout for each alert (more than 30k lines) and use toString() method
     criticals.forEach(a -> System.out.printf("  CRITICAL  [%s] %s%n", a.getBuildingId(), a.getMessage()));
     warnings.stream().limit(5).forEach(a -> System.out.printf("  WARNING   [%s] %s%n", a.getBuildingId(), a.getMessage()));
 
