@@ -1,5 +1,6 @@
 package uni.smartcampus.service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -92,22 +93,31 @@ public class MetricService {
   }
 
   private double calculateTotalEnergy(List<Measurement> measurements) {
-    double value = 0;
+    double total = 0;
+    LocalDateTime earliest = null;
+    LocalDateTime latest = null;
 
-    for(Measurement m: measurements){
+    for (Measurement m : measurements) {
       if (m.getUnit().isEnergyUnit()) {
-        value += m.getValue();
+        total += m.getValue();
+        if (earliest == null || m.getTimestamp().isBefore(earliest)) earliest = m.getTimestamp();
+        if (latest == null || m.getTimestamp().isAfter(latest)) latest = m.getTimestamp();
       }
     }
 
-    return value;
+    if (earliest == null) throw new IllegalArgumentException("No energy measurements found");
+
+    // Normalize to kWh/hour so the value is comparable across period selections
+    long elapsedMinutes = Duration.between(earliest, latest).toMinutes();
+    double hours = Math.max(elapsedMinutes, 5) / 60.0; // floor at one tick (5 min)
+    return total / hours;
   }
 
   private double calculatePeakPower(List<Measurement> measurements) {
     double value = 0;
 
     for(Measurement m: measurements){
-      if (m.getUnit().isEnergyUnit() && m.getValue() > value) {
+      if (m.getUnit().isPowerUnit() && m.getValue() > value) {
         value = m.getValue();
       }
     }
