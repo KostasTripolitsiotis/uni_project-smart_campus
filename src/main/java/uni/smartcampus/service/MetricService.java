@@ -55,7 +55,7 @@ public class MetricService {
       Comparator.comparing(Measurement::getTimestamp).reversed()
     );
 
-    // Return only the first 10 (or fewer if not enough exist)
+    // Return only the first 1000 (or fewer if not enough exist)
     return allMeasurements.subList(0, Math.min(1000, allMeasurements.size()));
   }
 
