@@ -26,3 +26,5 @@ replay_pid*
 generated-data/
 
 target/
+
+.vscode/

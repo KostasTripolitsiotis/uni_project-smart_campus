@@ -32,6 +32,9 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>exec-maven-plugin</artifactId>
+          <configuration>
+              <mainClass>uni.smartcampus.Main</mainClass>
+            </configuration>
           <version>3.1.0</version>
           <executions>
                 <execution>
