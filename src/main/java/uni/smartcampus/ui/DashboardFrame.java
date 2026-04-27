@@ -7,7 +7,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -45,6 +44,9 @@ import uni.smartcampus.service.AlertManager;
 import uni.smartcampus.service.LiveMeasurementService;
 import uni.smartcampus.service.MetricService;
 import uni.smartcampus.service.MockDataService;
+import static uni.smartcampus.util.UIConstants.BG_APP;
+import static uni.smartcampus.util.UIConstants.BG_HEADER;
+import static uni.smartcampus.util.UIConstants.FMT;
 import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
@@ -63,17 +65,11 @@ import static uni.smartcampus.util.UIConstants.FONT;
  */
 public class DashboardFrame extends JFrame {
 
-  private static final Color BG_APP    = new Color(240, 242, 245);
-  private static final Color BG_HEADER = new Color(30, 40, 60);
-
-  private static final DateTimeFormatter FMT =
-    DateTimeFormatter.ofPattern("yyyy-MM-dd  HH:mm:ss");
-
   // Dependencies
 
-  private final CampusLayout          layout;
+  private final CampusLayout layout;
   private final MeasurementRepository measurementRepo;
-  private final MockDataService        mockDataService;
+  private final MockDataService mockDataService;
 
   // Mutable state
 
@@ -111,14 +107,17 @@ public class DashboardFrame extends JFrame {
     MockDataService mockDataService
   ) {
     super("Smart Campus Monitor");
-    this.layout          = layout;
+    this.layout = layout;
     this.measurementRepo = measurementRepo;
     this.mockDataService = mockDataService;
 
+    // init live measurement service
     this.liveMeasurementService = new LiveMeasurementService(
       () -> loadedBuildings,
       mockDataService.buildGeneratorsBySensorId(layout),
       measurementRepo,
+      // lamba expression for which function to be called from 
+      // LiveMeasurementService on every tick (5min)
       this::renderCurrentData
     );
 
@@ -129,6 +128,7 @@ public class DashboardFrame extends JFrame {
     getContentPane().setBackground(BG_APP);
     setLayout(new BorderLayout());
 
+    // pass navbar actions as lamba expressions
     setJMenuBar(new NavBar(
       this::regenerateAsync,
       period -> { currentPeriod = period; renderCurrentData(); },
@@ -141,7 +141,7 @@ public class DashboardFrame extends JFrame {
     add(buildHeader(), BorderLayout.NORTH);
 
     buildingsScroll = new JScrollPane();
-    alertPanel      = new AlertPanel(List.of());
+    alertPanel = new AlertPanel(List.of());
     add(buildingsScroll, BorderLayout.CENTER);
     add(alertPanel,      BorderLayout.EAST);
 
@@ -168,7 +168,7 @@ public class DashboardFrame extends JFrame {
     title.setFont(new Font(FONT, Font.BOLD, 18));
     title.setForeground(Color.WHITE);
 
-    timestampLabel = new JLabel("\u2014");
+    timestampLabel = new JLabel("-");
     timestampLabel.setFont(new Font(FONT, Font.PLAIN, 11));
     timestampLabel.setForeground(new Color(160, 180, 200));
 
@@ -206,14 +206,14 @@ public class DashboardFrame extends JFrame {
     if (loadedBuildings == null) return;
 
     MetricService metricService = new MetricService();
-    AlertManager  alertManager  = new AlertManager();
+    AlertManager  alertManager = new AlertManager();
 
-    Map<String, List<Metric>>    metricsByBuilding       = new LinkedHashMap<>();
-    Map<String, Set<MetricType>> simulatedByBuilding     = new LinkedHashMap<>();
-    Map<String, Set<String>>     simSensorsByBuilding    = new LinkedHashMap<>();
+    Map<String, List<Metric>> metricsByBuilding = new LinkedHashMap<>();
+    Map<String, Set<MetricType>> simulatedByBuilding = new LinkedHashMap<>();
+    Map<String, Set<String>> simSensorsByBuilding = new LinkedHashMap<>();
 
     for (Building b : loadedBuildings) {
-      List<Metric>    bMetrics  = new ArrayList<>();
+      List<Metric> bMetrics = new ArrayList<>();
       Set<MetricType> simulated = new LinkedHashSet<>();
 
       for (MetricType type : MetricType.values()) {
@@ -241,8 +241,8 @@ public class DashboardFrame extends JFrame {
 
     // Evaluate simulated measurements and collect which sensors are marked SIM
     for (Map.Entry<String, SimMeasurement> entry : simulatedMeasurements.entrySet()) {
-      String         sensorId = entry.getKey();
-      SimMeasurement sim      = entry.getValue();
+      String sensorId = entry.getKey();
+      SimMeasurement sim = entry.getValue();
       alertManager.evaluateMeasurement(sim.measurement(), sim.buildingId());
       simSensorsByBuilding
         .computeIfAbsent(sim.buildingId(), k -> new LinkedHashSet<>())
@@ -252,7 +252,7 @@ public class DashboardFrame extends JFrame {
     render(loadedBuildings, metricsByBuilding, simulatedByBuilding,
            simSensorsByBuilding, alertManager.getAllAlerts());
   }
-
+// -------------------------------------------------------
   private void render(
     List<Building> buildings,
     Map<String, List<Metric>>    metricsByBuilding,
@@ -318,6 +318,8 @@ public class DashboardFrame extends JFrame {
         return null;
       }
 
+      // swing worker function
+      // Executed on the Event Dispatch Thread after the doInBackground method is finished.
       @Override
       protected void done() {
         progress.dispose();

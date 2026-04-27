@@ -5,7 +5,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import javax.swing.BorderFactory;
@@ -17,6 +16,15 @@ import javax.swing.border.EmptyBorder;
 
 import uni.smartcampus.model.alert.Alert;
 import uni.smartcampus.model.alert.AlertSeverity;
+import static uni.smartcampus.util.UIConstants.BG_CRITICAL;
+import static uni.smartcampus.util.UIConstants.BG_INFO;
+import static uni.smartcampus.util.UIConstants.BG_PANEL;
+import static uni.smartcampus.util.UIConstants.BG_WARNING;
+import static uni.smartcampus.util.UIConstants.DIVIDER;
+import static uni.smartcampus.util.UIConstants.FG_CRITICAL;
+import static uni.smartcampus.util.UIConstants.FG_INFO;
+import static uni.smartcampus.util.UIConstants.FG_WARNING;
+import static uni.smartcampus.util.UIConstants.FMT;
 import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
@@ -24,18 +32,6 @@ import static uni.smartcampus.util.UIConstants.FONT;
  * with colour-coded rows and a summary badge at the top.
  */
 public class AlertPanel extends JPanel {
-
-  private static final Color BG_PANEL    = new Color(248, 249, 252);
-  private static final Color BG_CRITICAL = new Color(253, 237, 236);
-  private static final Color BG_WARNING  = new Color(255, 248, 236);
-  private static final Color BG_INFO     = new Color(232, 244, 253);
-  private static final Color FG_CRITICAL = new Color(183, 28, 28);
-  private static final Color FG_WARNING  = new Color(166, 77, 0);
-  private static final Color FG_INFO     = new Color(13, 71, 161);
-  private static final Color DIVIDER     = new Color(220, 224, 230);
-
-  private static final DateTimeFormatter FMT =
-    DateTimeFormatter.ofPattern("HH:mm:ss");
 
   public AlertPanel(List<Alert> alerts) {
     setLayout(new BorderLayout());

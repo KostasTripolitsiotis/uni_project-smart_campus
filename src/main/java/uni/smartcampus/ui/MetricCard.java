@@ -14,7 +14,14 @@ import javax.swing.border.EmptyBorder;
 import uni.smartcampus.model.alert.AlertSeverity;
 import uni.smartcampus.model.metric.Metric;
 import uni.smartcampus.model.metric.MetricType;
+import static uni.smartcampus.util.UIConstants.BG;
+import static uni.smartcampus.util.UIConstants.BORDER_CRIT;
+import static uni.smartcampus.util.UIConstants.BORDER_NONE;
+import static uni.smartcampus.util.UIConstants.BORDER_WARN;
 import static uni.smartcampus.util.UIConstants.FONT;
+import static uni.smartcampus.util.UIConstants.LABEL_COLOR;
+import static uni.smartcampus.util.UIConstants.SIM_COLOR;
+import static uni.smartcampus.util.UIConstants.VALUE_COLOR;
 
 /**
  * A small card displaying a single metric value with label, formatted value,
@@ -24,14 +31,6 @@ import static uni.smartcampus.util.UIConstants.FONT;
  * indicating the value was manually injected via the Simulate Metric dialog.
  */
 public class MetricCard extends JPanel {
-
-  private static final Color BG           = Color.WHITE;
-  private static final Color LABEL_COLOR  = new Color(100, 110, 130);
-  private static final Color VALUE_COLOR  = new Color(30, 40, 60);
-  private static final Color BORDER_NONE  = new Color(220, 224, 230);
-  private static final Color BORDER_WARN  = new Color(230, 126, 34);
-  private static final Color BORDER_CRIT  = new Color(231, 76, 60);
-  private static final Color SIM_COLOR    = new Color(142, 68, 173);
 
   public MetricCard(Metric metric, AlertSeverity alertSeverity, boolean simulated) {
     setLayout(new BorderLayout(0, 4));

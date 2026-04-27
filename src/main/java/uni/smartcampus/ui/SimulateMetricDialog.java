@@ -28,7 +28,11 @@ import uni.smartcampus.model.metric.Metric;
 import uni.smartcampus.model.metric.MetricPeriod;
 import uni.smartcampus.model.metric.MetricType;
 import uni.smartcampus.util.ThresholdConfig;
+import static uni.smartcampus.util.UIConstants.BORDER_CRIT;
+import static uni.smartcampus.util.UIConstants.BORDER_WARN;
 import static uni.smartcampus.util.UIConstants.FONT;
+import static uni.smartcampus.util.UIConstants.HINT_NONE;
+import static uni.smartcampus.util.UIConstants.HINT_OK;
 import uni.smartcampus.util.Unit;
 
 /**
@@ -51,11 +55,6 @@ public class SimulateMetricDialog extends JDialog {
   public interface OnSubmit {
     void accept(Metric metric);
   }
-
-  private static final Color HINT_OK    = new Color(39, 174, 96);
-  private static final Color HINT_NONE  = new Color(149, 165, 166);
-  private static final Color HINT_WARN  = new Color(230, 126, 34);
-  private static final Color HINT_CRIT  = new Color(231, 76, 60);
 
   public SimulateMetricDialog(JFrame parent, List<Building> buildings, OnSubmit onSubmit) {
     super(parent, "Simulate Metric", true /* modal */);
@@ -194,8 +193,8 @@ public class SimulateMetricDialog extends JDialog {
         "<html><span style='color:%s'>Warning \u2265 %.1f %s</span>"
         + "&nbsp;&nbsp;\u00b7&nbsp;&nbsp;"
         + "<span style='color:%s'>Critical \u2265 %.1f %s</span></html>",
-        toHex(HINT_WARN), cfg.getWarning(),  sym,
-        toHex(HINT_CRIT), cfg.getCritical(), sym
+        toHex(BORDER_WARN), cfg.getWarning(),  sym,
+        toHex(BORDER_CRIT), cfg.getCritical(), sym
       ));
       hint.setForeground(HINT_OK); // fallback for plain-text renderers
     }

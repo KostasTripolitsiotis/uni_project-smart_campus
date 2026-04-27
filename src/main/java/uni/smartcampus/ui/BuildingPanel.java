@@ -22,6 +22,11 @@ import uni.smartcampus.model.alert.AlertSeverity;
 import uni.smartcampus.model.metric.Metric;
 import uni.smartcampus.model.metric.MetricType;
 import uni.smartcampus.model.sensor.Sensor;
+import static uni.smartcampus.util.UIConstants.BG_HEADER_BUILDING;
+import static uni.smartcampus.util.UIConstants.BG_PANEL_BUILDING;
+import static uni.smartcampus.util.UIConstants.BG_SENSOR;
+import static uni.smartcampus.util.UIConstants.DIVIDER;
+import static uni.smartcampus.util.UIConstants.FG_SENSOR;
 import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
@@ -33,12 +38,6 @@ import static uni.smartcampus.util.UIConstants.FONT;
  */
 public class BuildingPanel extends JPanel {
 
-  private static final Color BG_PANEL   = Color.WHITE;
-  private static final Color BG_HEADER  = new Color(44, 62, 80);
-  private static final Color BG_SENSOR  = new Color(248, 249, 252);
-  private static final Color FG_SENSOR  = new Color(70, 85, 105);
-  private static final Color DIVIDER    = new Color(220, 224, 230);
-
   public BuildingPanel(
     Building building,
     List<Metric> metrics,
@@ -47,7 +46,7 @@ public class BuildingPanel extends JPanel {
     Set<String> simulatedSensorIds
   ) {
     setLayout(new BorderLayout(0, 0));
-    setBackground(BG_PANEL);
+    setBackground(BG_PANEL_BUILDING);
     setBorder(BorderFactory.createCompoundBorder(
       BorderFactory.createLineBorder(DIVIDER, 1),
       new EmptyBorder(0, 0, 0, 0)
@@ -62,7 +61,7 @@ public class BuildingPanel extends JPanel {
 
   private JPanel buildHeader(Building building) {
     JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 8));
-    header.setBackground(BG_HEADER);
+    header.setBackground(BG_HEADER_BUILDING);
 
     JLabel idBadge = new JLabel(" #" + building.getId() + " ");
     idBadge.setFont(new Font(FONT, Font.BOLD, 10));
@@ -85,7 +84,7 @@ public class BuildingPanel extends JPanel {
     Set<MetricType> simulatedTypes
   ) {
     JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
-    row.setBackground(BG_PANEL);
+    row.setBackground(BG_PANEL_BUILDING);
 
     if (metrics.isEmpty()) {
       JLabel empty = new JLabel("No metric data available");

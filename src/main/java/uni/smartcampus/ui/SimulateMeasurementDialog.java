@@ -29,6 +29,8 @@ import uni.smartcampus.model.Measurement;
 import uni.smartcampus.model.sensor.Sensor;
 import uni.smartcampus.model.sensor.SensorType;
 import uni.smartcampus.util.ThresholdConfig;
+import static uni.smartcampus.util.UIConstants.BORDER_CRIT;
+import static uni.smartcampus.util.UIConstants.BORDER_WARN;
 import static uni.smartcampus.util.UIConstants.FONT;
 import uni.smartcampus.util.Unit;
 
@@ -47,9 +49,6 @@ public class SimulateMeasurementDialog extends JDialog {
   public interface OnSubmit {
     void accept(String buildingId, Sensor sensor, Measurement measurement);
   }
-
-  private static final Color HINT_WARN = new Color(230, 126, 34);
-  private static final Color HINT_CRIT = new Color(231, 76, 60);
 
   public SimulateMeasurementDialog(JFrame parent, List<Building> buildings, OnSubmit onSubmit) {
     super(parent, "Simulate Measurement", true /* modal */);
@@ -187,8 +186,8 @@ public class SimulateMeasurementDialog extends JDialog {
       "<html><span style='color:%s'>Warning \u2265 %.1f %s</span>"
       + "&nbsp;&nbsp;\u00b7&nbsp;&nbsp;"
       + "<span style='color:%s'>Critical \u2265 %.1f %s</span></html>",
-      toHex(HINT_WARN), cfg.getWarning(),  sym,
-      toHex(HINT_CRIT), cfg.getCritical(), sym
+      toHex(BORDER_WARN), cfg.getWarning(),  sym,
+      toHex(BORDER_CRIT), cfg.getCritical(), sym
     ));
   }
 
