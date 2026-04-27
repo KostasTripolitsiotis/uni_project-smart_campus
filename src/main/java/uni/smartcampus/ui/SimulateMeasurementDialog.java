@@ -29,6 +29,7 @@ import uni.smartcampus.model.Measurement;
 import uni.smartcampus.model.sensor.Sensor;
 import uni.smartcampus.model.sensor.SensorType;
 import uni.smartcampus.util.ThresholdConfig;
+import static uni.smartcampus.util.UIConstants.FONT;
 import uni.smartcampus.util.Unit;
 
 /**
@@ -71,8 +72,8 @@ public class SimulateMeasurementDialog extends JDialog {
     JLabel              unitLabel   = new JLabel();
     JLabel              hintLabel   = new JLabel();
 
-    unitLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
-    hintLabel.setFont(new Font("SansSerif", Font.ITALIC, 11));
+    unitLabel.setFont(new Font(FONT, Font.BOLD, 12));
+    hintLabel.setFont(new Font(FONT, Font.ITALIC, 11));
 
     buildingBox.setRenderer(new DefaultListCellRenderer() {
       @Override
@@ -172,7 +173,7 @@ public class SimulateMeasurementDialog extends JDialog {
     fc.insets = new Insets(6, 0, 6, 0);
 
     JLabel label = new JLabel(labelText + ":");
-    label.setFont(new Font("SansSerif", Font.BOLD, 12));
+    label.setFont(new Font(FONT, Font.BOLD, 12));
     panel.add(label, lc);
     panel.add(field, fc);
   }

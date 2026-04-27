@@ -14,6 +14,7 @@ import javax.swing.border.EmptyBorder;
 import uni.smartcampus.model.alert.AlertSeverity;
 import uni.smartcampus.model.metric.Metric;
 import uni.smartcampus.model.metric.MetricType;
+import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
  * A small card displaying a single metric value with label, formatted value,
@@ -24,7 +25,6 @@ import uni.smartcampus.model.metric.MetricType;
  */
 public class MetricCard extends JPanel {
 
-  private static final String FONT        = "SansSerif";
   private static final Color BG           = Color.WHITE;
   private static final Color LABEL_COLOR  = new Color(100, 110, 130);
   private static final Color VALUE_COLOR  = new Color(30, 40, 60);

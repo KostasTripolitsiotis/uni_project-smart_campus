@@ -28,6 +28,7 @@ import uni.smartcampus.model.metric.Metric;
 import uni.smartcampus.model.metric.MetricPeriod;
 import uni.smartcampus.model.metric.MetricType;
 import uni.smartcampus.util.ThresholdConfig;
+import static uni.smartcampus.util.UIConstants.FONT;
 import uni.smartcampus.util.Unit;
 
 /**
@@ -78,8 +79,8 @@ public class SimulateMetricDialog extends JDialog {
     JLabel                unitLabel   = new JLabel();
     JLabel                hintLabel   = new JLabel();
 
-    unitLabel.setFont(new Font("SansSerif", Font.BOLD, 12));
-    hintLabel.setFont(new Font("SansSerif", Font.ITALIC, 11));
+    unitLabel.setFont(new Font(FONT, Font.BOLD, 12));
+    hintLabel.setFont(new Font(FONT, Font.ITALIC, 11));
 
     // Building renderer
     buildingBox.setRenderer(new DefaultListCellRenderer() {
@@ -177,7 +178,7 @@ public class SimulateMetricDialog extends JDialog {
     fc.insets = new Insets(6, 0, 6, 0);
 
     JLabel label = new JLabel(labelText + ":");
-    label.setFont(new Font("SansSerif", Font.BOLD, 12));
+    label.setFont(new Font(FONT, Font.BOLD, 12));
     panel.add(label, lc);
     panel.add(field, fc);
   }

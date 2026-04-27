@@ -1,13 +1,23 @@
 package uni.smartcampus.ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import javax.swing.*;
-import javax.swing.border.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
 
 import uni.smartcampus.model.alert.Alert;
 import uni.smartcampus.model.alert.AlertSeverity;
+import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
  * Right-side panel displaying all active alerts grouped by severity,
@@ -46,7 +56,7 @@ public class AlertPanel extends JPanel {
     header.setBorder(new EmptyBorder(12, 14, 12, 14));
 
     JLabel title = new JLabel("Alerts");
-    title.setFont(new Font("SansSerif", Font.BOLD, 14));
+    title.setFont(new Font(FONT, Font.BOLD, 14));
     title.setForeground(Color.WHITE);
 
     JPanel badges = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
@@ -63,7 +73,7 @@ public class AlertPanel extends JPanel {
 
   private JLabel badge(String text, Color color) {
     JLabel b = new JLabel(" " + text + " ");
-    b.setFont(new Font("SansSerif", Font.BOLD, 10));
+    b.setFont(new Font(FONT, Font.BOLD, 10));
     b.setForeground(Color.WHITE);
     b.setBackground(color);
     b.setOpaque(true);
@@ -77,7 +87,7 @@ public class AlertPanel extends JPanel {
 
     if (alerts.isEmpty()) {
       JLabel empty = new JLabel("No active alerts");
-      empty.setFont(new Font("SansSerif", Font.ITALIC, 12));
+      empty.setFont(new Font(FONT, Font.ITALIC, 12));
       empty.setForeground(new Color(150, 160, 175));
       empty.setBorder(new EmptyBorder(20, 14, 0, 0));
       listPanel.add(empty);
@@ -115,17 +125,17 @@ public class AlertPanel extends JPanel {
     ));
 
     JLabel severityLabel = new JLabel(alert.getSeverity().name());
-    severityLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
+    severityLabel.setFont(new Font(FONT, Font.BOLD, 10));
     severityLabel.setForeground(fg);
 
     JLabel msgLabel = new JLabel("<html>" + alert.getMessage() + "</html>");
-    msgLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
+    msgLabel.setFont(new Font(FONT, Font.PLAIN, 11));
     msgLabel.setForeground(new Color(40, 50, 65));
 
     JLabel metaLabel = new JLabel(
       "Building " + alert.getBuildingId() + "  ·  " + alert.getTimestamp().format(FMT)
     );
-    metaLabel.setFont(new Font("SansSerif", Font.PLAIN, 10));
+    metaLabel.setFont(new Font(FONT, Font.PLAIN, 10));
     metaLabel.setForeground(new Color(120, 130, 145));
 
     JPanel top = new JPanel(new BorderLayout());

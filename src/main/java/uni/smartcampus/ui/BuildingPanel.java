@@ -1,12 +1,20 @@
 package uni.smartcampus.ui;
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.GridLayout;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.swing.*;
-import javax.swing.border.*;
+
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 
 import uni.smartcampus.model.Building;
 import uni.smartcampus.model.alert.Alert;
@@ -14,6 +22,7 @@ import uni.smartcampus.model.alert.AlertSeverity;
 import uni.smartcampus.model.metric.Metric;
 import uni.smartcampus.model.metric.MetricType;
 import uni.smartcampus.model.sensor.Sensor;
+import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
  * Panel representing one building: its name, a row of metric cards,
@@ -24,7 +33,6 @@ import uni.smartcampus.model.sensor.Sensor;
  */
 public class BuildingPanel extends JPanel {
 
-  private static final String FONT      = "SansSerif";
   private static final Color BG_PANEL   = Color.WHITE;
   private static final Color BG_HEADER  = new Color(44, 62, 80);
   private static final Color BG_SENSOR  = new Color(248, 249, 252);

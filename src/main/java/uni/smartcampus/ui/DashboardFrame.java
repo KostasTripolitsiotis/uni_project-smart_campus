@@ -45,6 +45,7 @@ import uni.smartcampus.service.AlertManager;
 import uni.smartcampus.service.LiveMeasurementService;
 import uni.smartcampus.service.MetricService;
 import uni.smartcampus.service.MockDataService;
+import static uni.smartcampus.util.UIConstants.FONT;
 
 /**
  * Main application window.
@@ -164,11 +165,11 @@ public class DashboardFrame extends JFrame {
     header.setBorder(new EmptyBorder(12, 20, 12, 20));
 
     JLabel title = new JLabel("Smart Campus Monitor");
-    title.setFont(new Font("SansSerif", Font.BOLD, 18));
+    title.setFont(new Font(FONT, Font.BOLD, 18));
     title.setForeground(Color.WHITE);
 
     timestampLabel = new JLabel("\u2014");
-    timestampLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
+    timestampLabel.setFont(new Font(FONT, Font.PLAIN, 11));
     timestampLabel.setForeground(new Color(160, 180, 200));
 
     header.add(title,          BorderLayout.WEST);
