@@ -7,6 +7,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -199,6 +200,14 @@ public class BuildingDetailPanel extends JPanel {
 
     SensorPlot tempPlot  = new SensorPlot("Temperature over Time", "°C", tempSeries,  period);
     SensorPlot powerPlot = new SensorPlot("Power over Time",       "kW", powerSeries, period);
+
+    if (period == MetricPeriod.HOURLY) {
+      JPanel row = new JPanel(new GridLayout(1, 2, 12, 0));
+      row.setBackground(BG_APP);
+      row.add(tempPlot);
+      row.add(powerPlot);
+      return row;
+    }
 
     for (SensorPlot plot : new SensorPlot[]{ tempPlot, powerPlot }) {
       plot.setAlignmentX(Component.LEFT_ALIGNMENT);
