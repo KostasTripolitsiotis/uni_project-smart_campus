@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -74,8 +75,10 @@ public class DashboardFrame extends JFrame {
   // Mutable state
 
   /** Null forces a full CSV reload on the next {@link #loadAndRender()} call. */
-  private List<Building> loadedBuildings = null;
-  private MetricPeriod   currentPeriod   = MetricPeriod.DAILY;
+  private List<Building> loadedBuildings        = null;
+  private MetricPeriod   currentPeriod          = MetricPeriod.DAILY;
+  /** Non-null while the building detail view is active; null means dashboard. */
+  private String         currentDetailBuildingId = null;
 
   /**
    * Manually injected metrics keyed by {@code "buildingId:MetricType"}.
@@ -95,8 +98,8 @@ public class DashboardFrame extends JFrame {
 
   // Live UI references replaced on each render
 
-  private JLabel timestampLabel;
-  private JScrollPane buildingsScroll;
+  private JLabel     timestampLabel;
+  private JComponent centerView;
   private AlertPanel alertPanel;
 
   // Constructor
@@ -140,10 +143,10 @@ public class DashboardFrame extends JFrame {
 
     add(buildHeader(), BorderLayout.NORTH);
 
-    buildingsScroll = new JScrollPane();
+    centerView = new JPanel();
     alertPanel = new AlertPanel(List.of());
-    add(buildingsScroll, BorderLayout.CENTER);
-    add(alertPanel,      BorderLayout.EAST);
+    add(centerView, BorderLayout.CENTER);
+    add(alertPanel, BorderLayout.EAST);
 
     addWindowListener(new java.awt.event.WindowAdapter() {
       @Override public void windowOpened(java.awt.event.WindowEvent e) {
@@ -268,17 +271,48 @@ public class DashboardFrame extends JFrame {
       + simNote
     );
 
-    remove(buildingsScroll);
-    buildingsScroll = buildBuildingsScroll(
-      buildings, metricsByBuilding, simulatedByBuilding, simSensorsByBuilding, alerts);
-    add(buildingsScroll, BorderLayout.CENTER);
+    remove(centerView);
+    if (currentDetailBuildingId != null) {
+      Building b = buildings.stream()
+        .filter(lb -> lb.getId().equals(currentDetailBuildingId))
+        .findFirst().orElse(null);
+      if (b != null) {
+        List<Metric>    bMetrics  = metricsByBuilding.getOrDefault(b.getId(), List.of());
+        List<Alert>     bAlerts   = alerts.stream()
+          .filter(a -> a.getBuildingId().equals(b.getId())).toList();
+        Set<MetricType> simTypes  = simulatedByBuilding.getOrDefault(b.getId(), Set.of());
+        centerView = new BuildingDetailPanel(
+          b, bMetrics, bAlerts, simTypes, currentPeriod, this::showDashboard);
+      } else {
+        currentDetailBuildingId = null;
+        centerView = buildBuildingsScroll(
+          buildings, metricsByBuilding, simulatedByBuilding, simSensorsByBuilding, alerts);
+      }
+    } else {
+      centerView = buildBuildingsScroll(
+        buildings, metricsByBuilding, simulatedByBuilding, simSensorsByBuilding, alerts);
+    }
+    add(centerView, BorderLayout.CENTER);
 
     remove(alertPanel);
-    alertPanel = new AlertPanel(alerts);
+    List<Alert> panelAlerts = (currentDetailBuildingId != null)
+      ? alerts.stream().filter(a -> a.getBuildingId().equals(currentDetailBuildingId)).toList()
+      : alerts;
+    alertPanel = new AlertPanel(panelAlerts);
     add(alertPanel, BorderLayout.EAST);
 
     revalidate();
     repaint();
+  }
+
+  private void showBuildingDetail(Building b) {
+    currentDetailBuildingId = b.getId();
+    renderCurrentData();
+  }
+
+  private void showDashboard() {
+    currentDetailBuildingId = null;
+    renderCurrentData();
   }
 
   // Simulate
@@ -325,7 +359,8 @@ public class DashboardFrame extends JFrame {
         progress.dispose();
         try {
           get();
-          loadedBuildings = null;
+          loadedBuildings         = null;
+          currentDetailBuildingId = null;
           simulatedMetrics.clear();
           simulatedMeasurements.clear();
           loadAndRender();
@@ -372,7 +407,8 @@ public class DashboardFrame extends JFrame {
       List<Metric>    metrics    = metricsByBuilding.getOrDefault(b.getId(), List.of());
       Set<MetricType> simMetrics = simulatedByBuilding.getOrDefault(b.getId(), Set.of());
       Set<String>     simSensors = simSensorsByBuilding.getOrDefault(b.getId(), Set.of());
-      BuildingPanel bp = new BuildingPanel(b, metrics, alerts, simMetrics, simSensors);
+      BuildingPanel bp = new BuildingPanel(b, metrics, alerts, simMetrics, simSensors,
+        () -> showBuildingDetail(b));
       bp.setAlignmentX(Component.LEFT_ALIGNMENT);
       bp.setMaximumSize(new Dimension(Integer.MAX_VALUE, bp.getPreferredSize().height));
       column.add(bp);
