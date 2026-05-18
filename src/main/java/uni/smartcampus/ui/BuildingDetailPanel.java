@@ -2,10 +2,11 @@ package uni.smartcampus.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -16,9 +17,12 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 
 import uni.smartcampus.model.Building;
@@ -102,7 +106,7 @@ public class BuildingDetailPanel extends JPanel {
 
   // ── Content ─────────────────────────────────────────────────────────────
 
-  private JPanel buildContent(
+  private JScrollPane buildContent(
     Building        building,
     List<Metric>    metrics,
     List<Alert>     alerts,
@@ -124,7 +128,14 @@ public class BuildingDetailPanel extends JPanel {
     content.setBackground(BG_APP);
     content.add(north, BorderLayout.NORTH);
     content.add(plots, BorderLayout.CENTER);
-    return content;
+
+    JScrollPane scroll = new JScrollPane(content);
+    scroll.setBorder(null);
+    scroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    scroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+    scroll.getVerticalScrollBar().setUnitIncrement(16);
+    scroll.setBackground(BG_APP);
+    return scroll;
   }
 
   private JLabel buildSectionLabel(String text) {
@@ -186,11 +197,23 @@ public class BuildingDetailPanel extends JPanel {
       }
     }
 
-    JPanel row = new JPanel(new GridLayout(1, 2, 12, 0));
-    row.setBackground(BG_APP);
-    row.add(new SensorPlot("Temperature over Time", "°C", tempSeries,  period));
-    row.add(new SensorPlot("Power over Time",       "kW",     powerSeries, period));
-    return row;
+    SensorPlot tempPlot  = new SensorPlot("Temperature over Time", "°C", tempSeries,  period);
+    SensorPlot powerPlot = new SensorPlot("Power over Time",       "kW", powerSeries, period);
+
+    for (SensorPlot plot : new SensorPlot[]{ tempPlot, powerPlot }) {
+      plot.setAlignmentX(Component.LEFT_ALIGNMENT);
+      plot.setPreferredSize(new Dimension(300, 300));
+      plot.setMinimumSize(new Dimension(150, 300));
+      plot.setMaximumSize(new Dimension(1000, 300));
+    }
+
+    JPanel col = new JPanel();
+    col.setLayout(new BoxLayout(col, BoxLayout.Y_AXIS));
+    col.setBackground(BG_APP);
+    col.add(tempPlot);
+    col.add(Box.createVerticalStrut(12));
+    col.add(powerPlot);
+    return col;
   }
 
   private List<Measurement> filterByPeriod(List<Measurement> measurements, MetricPeriod period) {

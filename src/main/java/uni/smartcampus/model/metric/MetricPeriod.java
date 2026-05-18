@@ -5,5 +5,5 @@ public enum MetricPeriod {
   DAILY,
   MONTHLY,
   // for testing
-  LAST_1000
+  LAST_1000,
 }
