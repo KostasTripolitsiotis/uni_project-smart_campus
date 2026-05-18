@@ -2,6 +2,7 @@ package uni.smartcampus.ui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -12,6 +13,7 @@ import java.util.Set;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
@@ -43,7 +45,8 @@ public class BuildingPanel extends JPanel {
     List<Metric> metrics,
     List<Alert> alerts,
     Set<MetricType> simulatedTypes,
-    Set<String> simulatedSensorIds
+    Set<String> simulatedSensorIds,
+    Runnable onDetails
   ) {
     setLayout(new BorderLayout(0, 0));
     setBackground(BG_PANEL_BUILDING);
@@ -54,14 +57,17 @@ public class BuildingPanel extends JPanel {
 
     Map<MetricType, AlertSeverity> alertMap = buildAlertMap(alerts, building.getId());
 
-    add(buildHeader(building),                                        BorderLayout.NORTH);
+    add(buildHeader(building, onDetails),                             BorderLayout.NORTH);
     add(buildMetricsRow(metrics, alertMap, simulatedTypes),           BorderLayout.CENTER);
     add(buildSensorList(building.getSensors(), simulatedSensorIds),   BorderLayout.SOUTH);
   }
 
-  private JPanel buildHeader(Building building) {
-    JPanel header = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 8));
+  private JPanel buildHeader(Building building, Runnable onDetails) {
+    JPanel header = new JPanel(new BorderLayout());
     header.setBackground(BG_HEADER_BUILDING);
+
+    JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 8));
+    left.setOpaque(false);
 
     JLabel idBadge = new JLabel(" #" + building.getId() + " ");
     idBadge.setFont(new Font(FONT, Font.BOLD, 10));
@@ -73,8 +79,26 @@ public class BuildingPanel extends JPanel {
     nameLabel.setFont(new Font(FONT, Font.BOLD, 14));
     nameLabel.setForeground(Color.WHITE);
 
-    header.add(idBadge);
-    header.add(nameLabel);
+    left.add(idBadge);
+    left.add(nameLabel);
+
+    JButton detailsBtn = new JButton("Details");
+    detailsBtn.setFont(new Font(FONT, Font.PLAIN, 11));
+    detailsBtn.setForeground(new Color(180, 200, 220));
+    detailsBtn.setContentAreaFilled(false);
+    detailsBtn.setBorder(BorderFactory.createCompoundBorder(
+      BorderFactory.createLineBorder(new Color(80, 110, 140), 1),
+      new EmptyBorder(3, 10, 3, 10)
+    ));
+    detailsBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    detailsBtn.addActionListener(e -> onDetails.run());
+
+    JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 6));
+    right.setOpaque(false);
+    right.add(detailsBtn);
+
+    header.add(left,  BorderLayout.WEST);
+    header.add(right, BorderLayout.EAST);
     return header;
   }
 
