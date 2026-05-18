@@ -197,6 +197,7 @@ public class BuildingDetailPanel extends JPanel {
     LocalDateTime cutoff = switch (period) {
       case HOURLY    -> LocalDateTime.now().minusHours(1);
       case DAILY     -> LocalDateTime.now().minusDays(1);
+      case MONTHLY   -> LocalDateTime.now().minusMonths(1);
       case LAST_1000 -> LocalDateTime.MIN;
     };
     List<Measurement> result = measurements.stream()

@@ -35,9 +35,9 @@ public class MetricService {
   private List<Measurement> getMeasurements(Building b, MetricPeriod mp) {
     return switch (mp) {
       case LAST_1000 -> getLast10(b);
-      case HOURLY -> getHourly(b);
-      case DAILY -> getDaily(b);
-      default -> new ArrayList<>();
+      case HOURLY    -> getHourly(b);
+      case DAILY     -> getDaily(b);
+      case MONTHLY   -> getMonthly(b);
     };
   }
 
@@ -88,6 +88,19 @@ public class MetricService {
       }
     }
 
+    return result;
+  }
+
+  private List<Measurement> getMonthly(Building b) {
+    List<Measurement> result = new ArrayList<>();
+    LocalDateTime cutoff = LocalDateTime.now().minusMonths(1);
+    for (Sensor s : b.getSensors()) {
+      for (Measurement m : s.getMeasurements()) {
+        if (m.getTimestamp().isAfter(cutoff)) {
+          result.add(m);
+        }
+      }
+    }
     return result;
   }
 

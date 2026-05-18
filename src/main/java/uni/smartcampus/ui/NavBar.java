@@ -100,6 +100,7 @@ public class NavBar extends JMenuBar {
     return switch (period) {
       case HOURLY    -> "Hourly";
       case DAILY     -> "Daily";
+      case MONTHLY   -> "Monthly";
       case LAST_1000 -> "Last 1,000 Measurements";
     };
   }
