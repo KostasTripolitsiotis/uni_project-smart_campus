@@ -98,10 +98,12 @@ public class NavBar extends JMenuBar {
 
   static String periodLabel(MetricPeriod period) {
     return switch (period) {
-      case HOURLY    -> "Hourly";
-      case DAILY     -> "Daily";
-      case MONTHLY   -> "Monthly";
-      case LAST_1000 -> "Last 1,000 Measurements";
+      case HOURLY     -> "Hourly";
+      case DAILY      -> "Daily";
+      case WEEKLY     -> "Weekly";
+      case MONTHLY    -> "Monthly";
+      case LAST_3_DAYS -> "Last 3 Days";
+      case LAST_1000  -> "Last 1,000 Measurements";
     };
   }
 }

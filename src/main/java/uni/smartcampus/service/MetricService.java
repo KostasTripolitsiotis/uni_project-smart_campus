@@ -35,9 +35,11 @@ public class MetricService {
   private List<Measurement> getMeasurements(Building b, MetricPeriod mp) {
     return switch (mp) {
       case LAST_1000 -> getLast10(b);
-      case HOURLY    -> getHourly(b);
-      case DAILY     -> getDaily(b);
-      case MONTHLY   -> getMonthly(b);
+      case HOURLY     -> getHourly(b);
+      case DAILY      -> getDaily(b);
+      case WEEKLY     -> getWeekly(b);
+      case MONTHLY    -> getMonthly(b);
+      case LAST_3_DAYS -> getLast3Days(b);
     };
   }
 
@@ -88,6 +90,32 @@ public class MetricService {
       }
     }
 
+    return result;
+  }
+
+  private List<Measurement> getWeekly(Building b) {
+    List<Measurement> result = new ArrayList<>();
+    LocalDateTime cutoff = LocalDateTime.now().minusWeeks(1);
+    for (Sensor s : b.getSensors()) {
+      for (Measurement m : s.getMeasurements()) {
+        if (m.getTimestamp().isAfter(cutoff)) {
+          result.add(m);
+        }
+      }
+    }
+    return result;
+  }
+
+  private List<Measurement> getLast3Days(Building b) {
+    List<Measurement> result = new ArrayList<>();
+    LocalDateTime cutoff = LocalDateTime.now().minusDays(3);
+    for (Sensor s : b.getSensors()) {
+      for (Measurement m : s.getMeasurements()) {
+        if (m.getTimestamp().isAfter(cutoff)) {
+          result.add(m);
+        }
+      }
+    }
     return result;
   }
 
