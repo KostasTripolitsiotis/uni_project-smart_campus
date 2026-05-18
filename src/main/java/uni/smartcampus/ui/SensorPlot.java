@@ -31,7 +31,7 @@ public class SensorPlot extends JPanel {
 
   public record DataSeries(String label, Color color, List<Measurement> data) {}
 
-  public static final Color[] PALETTE = {
+  protected static final Color[] PALETTE = {
     new Color( 59, 130, 200),
     new Color(220,  95,  55),
     new Color( 56, 168,  90),
@@ -84,7 +84,10 @@ public class SensorPlot extends JPanel {
     g2.setColor(VALUE_COLOR);
     g2.drawString(title + "  (" + yUnit + ")", L, T - 12);
 
-    int cx = L, cy = T, cw = w - L - R, ch = h - T - B;
+    int cx = L;
+    int cy = T;
+    int cw = w - L - R;
+    int ch = h - T - B;
     if (cw < 10 || ch < 10) return;
 
     boolean hasData = series.stream().anyMatch(s -> !s.data().isEmpty());
@@ -190,7 +193,8 @@ public class SensorPlot extends JPanel {
       .sorted(Comparator.comparing(Measurement::getTimestamp))
       .toList();
 
-    int prevX = Integer.MIN_VALUE, prevY = 0;
+    int prevX = Integer.MIN_VALUE;
+    int prevY = 0;
     for (Measurement m : sorted) {
       long ms = java.time.Duration.between(xMin, m.getTimestamp()).toMillis();
       int  px = cx + (int) ((double) ms / xRangeMs * cw);
