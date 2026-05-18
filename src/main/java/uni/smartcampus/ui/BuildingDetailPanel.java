@@ -218,10 +218,12 @@ public class BuildingDetailPanel extends JPanel {
 
   private List<Measurement> filterByPeriod(List<Measurement> measurements, MetricPeriod period) {
     LocalDateTime cutoff = switch (period) {
-      case HOURLY    -> LocalDateTime.now().minusHours(1);
-      case DAILY     -> LocalDateTime.now().minusDays(1);
-      case MONTHLY   -> LocalDateTime.now().minusMonths(1);
-      case LAST_1000 -> LocalDateTime.MIN;
+      case HOURLY     -> LocalDateTime.now().minusHours(1);
+      case DAILY      -> LocalDateTime.now().minusDays(1);
+      case WEEKLY     -> LocalDateTime.now().minusWeeks(1);
+      case MONTHLY    -> LocalDateTime.now().minusMonths(1);
+      case LAST_3_DAYS -> LocalDateTime.now().minusDays(3);
+      case LAST_1000  -> LocalDateTime.MIN;
     };
     List<Measurement> result = measurements.stream()
       .filter(m -> m.getTimestamp().isAfter(cutoff))

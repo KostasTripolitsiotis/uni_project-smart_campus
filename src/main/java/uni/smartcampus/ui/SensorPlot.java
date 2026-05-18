@@ -146,7 +146,8 @@ public class SensorPlot extends JPanel {
 
   private void drawGrid(Graphics2D g2, int cx, int cy, int cw, int ch,
                         LocalDateTime xMin, long xRangeMs, double yMin, double yRange) {
-    DateTimeFormatter xFmt = (period == MetricPeriod.MONTHLY || period == MetricPeriod.LAST_1000)
+    DateTimeFormatter xFmt = (period == MetricPeriod.WEEKLY || period == MetricPeriod.MONTHLY
+        || period == MetricPeriod.LAST_3_DAYS || period == MetricPeriod.LAST_1000)
       ? DateTimeFormatter.ofPattern("dd/MM HH:mm")
       : DateTimeFormatter.ofPattern("HH:mm");
 
